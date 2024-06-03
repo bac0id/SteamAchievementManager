@@ -36,12 +36,12 @@ using APITypes = SAM.API.Types;
 
 namespace SAM.Picker
 {
-    internal partial class GamePicker : Form
+    internal partial class GameListForm : Form
     {
         private readonly API.Client _SteamClient;
 
         private readonly Dictionary<uint, GameInfo> _Games;
-        private readonly List<GameInfo> _FilteredGames;
+        private readonly List<GameInfo> _gameInfos;
         private int _SelectedGameIndex;
 
         private readonly List<string> _LogosAttempted;
@@ -51,10 +51,10 @@ namespace SAM.Picker
         private readonly API.Callbacks.AppDataChanged _AppDataChangedCallback;
         // ReSharper restore PrivateFieldCanBeConvertedToLocalVariable
 
-        public GamePicker(API.Client client)
+        public GameListForm(API.Client client)
         {
             this._Games = new Dictionary<uint, GameInfo>();
-            this._FilteredGames = new List<GameInfo>();
+            this._gameInfos = new List<GameInfo>();
             this._SelectedGameIndex = -1;
             this._LogosAttempted = new List<string>();
             this._LogoQueue = new ConcurrentQueue<GameInfo>();
@@ -135,7 +135,7 @@ namespace SAM.Picker
         private void RefreshGames()
         {
             this._SelectedGameIndex = -1;
-            this._FilteredGames.Clear();
+            this._gameInfos.Clear();
             foreach (var info in this._Games.Values.OrderBy(gi => gi.Name))
             {
                 if (info.Type == "normal" && _FilterGamesMenuItem.Checked == false)
@@ -154,11 +154,11 @@ namespace SAM.Picker
                 {
                     continue;
                 }
-                this._FilteredGames.Add(info);
+                this._gameInfos.Add(info);
                 this.AddGameToLogoQueue(info);
             }
 
-            this._GameListView.VirtualListSize = this._FilteredGames.Count;
+            this._GameListView.VirtualListSize = this._gameInfos.Count;
             this._PickerStatusLabel.Text = string.Format(
                 CultureInfo.CurrentCulture,
                 "Displaying {0} games. Total {1} games.",
@@ -174,7 +174,7 @@ namespace SAM.Picker
 
         private void OnGameListViewRetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e)
         {
-            var info = this._FilteredGames[e.ItemIndex];
+            var info = this._gameInfos[e.ItemIndex];
             e.Item = new ListViewItem()
             {
                 Text = info.Name,
@@ -189,7 +189,7 @@ namespace SAM.Picker
                 return;
             }
 
-            var count = this._FilteredGames.Count;
+            var count = this._gameInfos.Count;
             if (count < 2)
             {
                 return;
@@ -212,19 +212,19 @@ namespace SAM.Picker
             if (e.StartIndex >= count)
             {
                 // starting from the last item in the list
-                index = this._FilteredGames.FindIndex(0, startIndex - 1, predicate);
+                index = this._gameInfos.FindIndex(0, startIndex - 1, predicate);
             }
             else if (startIndex <= 0)
             {
                 // starting from the first item in the list
-                index = this._FilteredGames.FindIndex(0, count, predicate);
+                index = this._gameInfos.FindIndex(0, count, predicate);
             }
             else
             {
-                index = this._FilteredGames.FindIndex(startIndex, count - startIndex, predicate);
+                index = this._gameInfos.FindIndex(startIndex, count - startIndex, predicate);
                 if (index < 0)
                 {
-                    index = this._FilteredGames.FindIndex(0, startIndex - 1, predicate);
+                    index = this._gameInfos.FindIndex(0, startIndex - 1, predicate);
                 }
             }
 
@@ -372,32 +372,46 @@ namespace SAM.Picker
 
         private void OnActivateGame(object sender, EventArgs e)
         {
-            var index = this._SelectedGameIndex;
-            if (index < 0 || index >= this._FilteredGames.Count)
+			var index = this._GameListView.SelectedIndices[0];
+            if (index < 0 || index >= this._gameInfos.Count)
             {
                 return;
             }
 
-            var info = this._FilteredGames[index];
-            if (info == null)
+            var gameInfo = this._gameInfos[index];
+            if (gameInfo == null)
             {
                 return;
             }
 
-            try
-            {
-                Process.Start("SAM.Game.exe", info.Id.ToString(CultureInfo.InvariantCulture));
-            }
-            catch (Win32Exception)
-            {
-                MessageBox.Show(
-                    this,
-                    "Failed to start SAM.Game.exe.",
-                    "Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
+            StartGameForm(gameInfo);
         }
+
+        private Process StartGameForm(GameInfo gameInfo) {
+            Process process = null;
+			try {
+				ProcessStartInfo processStartInfo = new ProcessStartInfo();
+				processStartInfo.CreateNoWindow = true;
+				processStartInfo.FileName = "SAM.Game.exe";
+				processStartInfo.Arguments = gameInfo.Id.ToString(CultureInfo.InvariantCulture);
+
+				process = Process.Start(processStartInfo);
+
+				// gameClient.Initialize(info.Id) can cause ClientInitializeException(ClientInitializeFailure.AppIdMismatch, "appID mismatch") in Client.cs
+
+				//var gameClient = new API.Client();
+				//gameClient.Initialize(info.Id);
+				//new Game.GameForm(info.Id, gameClient);
+			} catch (Win32Exception) {
+				MessageBox.Show(
+					this,
+					"Failed to start SAM.Game.exe.",
+					"Error",
+					MessageBoxButtons.OK,
+					MessageBoxIcon.Error);
+			}
+            return process;
+		}
 
         private void OnRefresh(object sender, EventArgs e)
         {
@@ -409,7 +423,20 @@ namespace SAM.Picker
         {
             uint id;
 
-            if (uint.TryParse(this._AddGameTextBox.Text, out id) == false)
+            string inputStr = this._AddGameTextBox.Text;
+
+			if (!this.GetFirstDigitSegment(inputStr, out string digitSegment))
+            {
+				MessageBox.Show(
+	                this,
+	                "Please enter a valid game ID.",
+	                "Error",
+	                MessageBoxButtons.OK,
+	                MessageBoxIcon.Error);
+				return;
+			}
+
+			if (uint.TryParse(digitSegment, out id) == false)
             {
                 MessageBox.Show(
                     this,
@@ -444,6 +471,77 @@ namespace SAM.Picker
         private void OnFilterUpdate(object sender, EventArgs e)
         {
             this.RefreshGames();
-        }
-    }
+		}
+
+		private bool GetFirstDigitSegment(string str, out string digitSegment)
+        {
+			int length = str.Length;
+
+			char firstDigit = str.FirstOrDefault(x => x >= '0' && x <= '9');
+			if (firstDigit == '\0')
+            {
+				digitSegment = null;
+				return false;
+			}
+
+			int i = str.IndexOf(firstDigit);
+
+			int j = i + 1;
+			while (j < length && str[j] >= '0' && str[j] <= '9') 
+            {
+				++j;
+			}
+
+			digitSegment = str.Substring(i, j - i);
+			return true;
+		}
+
+		private void _AutoUnlockButton_Click(object sender, EventArgs e) {
+            //int gameCount = _gameInfos.Count;
+            //int countPerBatch = 20;
+
+            //IEnumerator<GameInfo> enumerator = _gameInfos.GetEnumerator();
+
+            //List<Process> processes = new List<Process>(countPerBatch);
+
+            //         bool allGamesStarted = false;
+            //         bool allGamesEnded = false;
+            //Timer timer = new Timer();
+            //timer.Interval = 100;
+            //timer.Tick += (sender1, e1) => {
+
+            //	for (int i = processes.Count - 1; i >= 0; i--) {
+            //		if (processes[i].HasExited) {
+            //			Console.WriteLine($"End {processes[i].StartInfo.Arguments[0]}");
+            //			processes.RemoveAt(i);
+            //		}
+            //	}
+
+            //	if (allGamesStarted) {
+            //		if (processes.Count == 0) {
+            //			allGamesEnded = true;
+            //			timer.Stop();
+            //			return;
+            //		}
+            //	}
+
+            //	while (processes.Count < countPerBatch) {
+            //		if (enumerator.MoveNext()) {
+            //			GameInfo gameInfo = enumerator.Current;
+            //			Process p = StartGameForm(gameInfo);
+            //			processes.Add(p);
+            //			Console.WriteLine($"Start {gameInfo.Id}, name: {gameInfo.Name}");
+            //		} else {
+            //			allGamesStarted = true;
+            //			break;
+            //		}
+            //	}
+
+            //};
+            //timer.Start();
+
+			AutoUnlocker autoUnlocker = new AutoUnlocker(_gameInfos, 20, 200, StartGameForm);
+			autoUnlocker.Start();
+		}
+	}
 }

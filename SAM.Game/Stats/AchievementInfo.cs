@@ -42,6 +42,8 @@ namespace SAM.Game.Stats
 
             set { this.Item.ImageIndex = value; }
         }
-        #endregion
-    }
+		#endregion
+
+		public bool IsProtected => (Permission & 3) != 0;
+	}
 }

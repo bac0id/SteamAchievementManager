@@ -33,7 +33,7 @@ using APITypes = SAM.API.Types;
 
 namespace SAM.Game
 {
-    internal partial class Manager : Form
+    public partial class GameForm : Form
     {
         private readonly long _GameId;
         private readonly API.Client _SteamClient;
@@ -54,7 +54,10 @@ namespace SAM.Game
 
         //private API.Callback<APITypes.UserStatsStored> UserStatsStoredCallback;
 
-        public Manager(long gameId, API.Client client)
+
+        private bool needToShowNormalMessageBox = false;
+
+        public GameForm(long gameId, API.Client client)
         {
             this.InitializeComponent();
 
@@ -116,7 +119,7 @@ namespace SAM.Game
             else
             {
                 info.ImageIndex = this._AchievementImageList.Images.Count;
-                this._AchievementImageList.Images.Add(info.IsAchieved == true ? info.IconNormal : info.IconLocked, icon);
+                this._AchievementImageList.Images.Add(info.IsAchieved ? info.IconNormal : info.IconLocked, icon);
             }
         }
 
@@ -156,7 +159,7 @@ namespace SAM.Game
                 return;
             }
 
-            if (this._IconDownloader.IsBusy == true)
+            if (this._IconDownloader.IsBusy)
             {
                 return;
             }
@@ -176,7 +179,7 @@ namespace SAM.Game
                     CultureInfo.InvariantCulture,
                     "http://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/{0}/{1}",
                     this._GameId,
-                    info.IsAchieved == true ? info.IconNormal : info.IconLocked)),
+					info.IsAchieved ? info.IconNormal : info.IconLocked)),
                 info);
         }
 
@@ -438,7 +441,7 @@ namespace SAM.Game
 
             foreach (var def in this._AchievementDefinitions)
             {
-                if (string.IsNullOrEmpty(def.Id) == true)
+                if (string.IsNullOrEmpty(def.Id))
                 {
                     continue;
                 }
@@ -462,15 +465,15 @@ namespace SAM.Game
 
                 var item = new ListViewItem()
                 {
-                    Checked = isAchieved,
-                    Tag = info,
-                    Text = info.Name,
-                    BackColor = (def.Permission & 3) == 0 ? Color.Black : Color.FromArgb(64, 0, 0),
-                };
+					Checked = isAchieved,
+					Tag = info,
+					Text = info.Name,
+					BackColor = def.IsProtected ? Color.DarkRed : Color.Black,
+				};
 
                 info.Item = item;
 
-                if (item.Text.StartsWith("#", StringComparison.InvariantCulture) == true)
+                if (item.Text.StartsWith("#", StringComparison.InvariantCulture))
                 {
                     item.Text = info.Id;
                 }
@@ -489,14 +492,17 @@ namespace SAM.Game
             this._IsUpdatingAchievementList = false;
 
             this.DownloadNextIcon();
-        }
+
+
+            _UnlockAllAndCloseButton_Click(null, null);
+		}
 
         private void GetStatistics()
         {
             this._Statistics.Clear();
             foreach (var rdef in this._StatDefinitions)
             {
-                if (string.IsNullOrEmpty(rdef.Id) == true)
+                if (string.IsNullOrEmpty(rdef.Id))
                 {
                     continue;
                 }
@@ -611,7 +617,7 @@ namespace SAM.Game
                 return 0;
             }
 
-            var statistics = this._Statistics.Where(stat => stat.IsModified == true).ToList();
+            var statistics = this._Statistics.Where(stat => stat.IsModified).ToList();
             if (statistics.Count == 0)
             {
                 return 0;
@@ -708,11 +714,13 @@ namespace SAM.Game
 
         private void OnUnlockAll(object sender, EventArgs e)
         {
-            foreach (ListViewItem item in this._AchievementListView.Items)
-            {
-                item.Checked = true;
-            }
-        }
+            foreach (ListViewItem item in this._AchievementListView.Items) {
+				var achievementInfo = item.Tag as Stats.AchievementInfo;
+				if (!achievementInfo.IsProtected) {
+					item.Checked = true;
+				}
+			}
+		}
 
         private bool Store()
         {
@@ -752,16 +760,19 @@ namespace SAM.Game
                 return;
             }
 
-            MessageBox.Show(
-                this,
-                string.Format(
-                    CultureInfo.CurrentCulture,
-                    "Stored {0} achievements and {1} statistics.",
-                    achievements,
-                    stats),
-                "Information",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
+            if (this.needToShowNormalMessageBox) {
+				MessageBox.Show(
+					this,
+					string.Format(
+						CultureInfo.CurrentCulture,
+						"Stored {0} achievements and {1} statistics.",
+						achievements,
+						stats),
+					"Information",
+					MessageBoxButtons.OK,
+					MessageBoxIcon.Information);
+			}
+
             this.RefreshStats();
         }
 
@@ -838,7 +849,7 @@ namespace SAM.Game
                 return;
             }
 
-            if (this._IsUpdatingAchievementList == true)
+            if (this._IsUpdatingAchievementList)
             {
                 return;
             }
@@ -850,7 +861,7 @@ namespace SAM.Game
                 return;
             }
 
-            if ((info.Permission & 3) != 0)
+            if (info.IsProtected)
             {
                 MessageBox.Show(
                     this,
@@ -861,5 +872,11 @@ namespace SAM.Game
                 e.NewValue = e.CurrentValue;
             }
         }
-    }
+
+		private void _UnlockAllAndCloseButton_Click(object sender, EventArgs e) {
+			OnUnlockAll(sender, e);
+			OnStore(sender, e);
+            this.Close();
+		}
+	}
 }

@@ -32,7 +32,9 @@ namespace SAM.Game.Stats
         public bool IsHidden;
         public int Permission;
 
-        public override string ToString()
+		public bool IsProtected => (Permission & 3) != 0;
+
+		public override string ToString()
         {
             return string.Format(
                 System.Globalization.CultureInfo.CurrentCulture,

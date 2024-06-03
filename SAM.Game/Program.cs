@@ -34,7 +34,7 @@ namespace SAM.Game
         {
             long appId;
 
-            if (args.Length == 0)
+            if (args.Length == 0) 
             {
                 Process.Start("SAM.Picker.exe");
                 return;
@@ -110,7 +110,7 @@ namespace SAM.Game
 
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new Manager(appId, client));
+                Application.Run(new GameForm(appId, client));
             }
         }
     }
