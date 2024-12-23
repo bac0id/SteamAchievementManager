@@ -6,76 +6,75 @@ using System.Timers;
 namespace SAM.Picker {
 	internal class AutoUnlocker {
 
-		private List<GameInfo> gameInfos;
-		private int batchSize;
-		private int interval;
+		private List<GameInfo> _gameInfos;
+		private SAMGameFactory _gameFactory;
+		private int _maxGameProcessCountAtSameTime;
+		private int _timerInterval;
 
-		private Timer timer;
-		private List<Process> processes = new List<Process>();
-		private bool allGamesStarted;
-		private bool allGamesEnded;
-		private IEnumerator<GameInfo> enumerator;
+		private Timer _timer;
+		private List<Process> _activeGameProcesses = new List<Process>();
+		private bool _isAllGameProcessesStarted;
+		private bool _isAllGameProcessesEnded;
+		private IEnumerator<GameInfo> _gameInfosEnumerator;
 
-		private Func<GameInfo, Process> startGameForm;
-
-		public AutoUnlocker(List<GameInfo> gameinfos, int batchSize, int interval, Func<GameInfo, Process> startGameFormFunc) {
-			this.gameInfos = gameinfos;
-			this.batchSize = batchSize;
-			this.interval = interval;
-			this.startGameForm = startGameFormFunc;
+		public AutoUnlocker(List<GameInfo> gameinfos, SAMGameFactory gameFactory, int maxGameProcessCountAtSameTime = 50, int interval = 200) {
+			this._gameInfos = gameinfos;
+			this._gameFactory = gameFactory;
+			this._maxGameProcessCountAtSameTime = maxGameProcessCountAtSameTime;
+			this._timerInterval = interval;
 		}
 
 		~AutoUnlocker() {
-			foreach (var process in processes) {
+			foreach (var process in _activeGameProcesses) {
 				process.Close();
 			}
 		}
 
 		public void Start() {
-			if (this.timer == null) {
+			if (this._timer == null) {
 				Init();
 			}
-			timer.Start();
+			_timer.Start();
 		}
 
 		public void Stop() {
-			timer.Stop();
+			_timer.Stop();
 		}
 
 		private void Init() {
-			this.timer = new Timer();
-			this.timer.Interval = interval;
-			this.timer.Elapsed += Update;
+			this._timer = new Timer();
+			this._timer.Interval = _timerInterval;
+			this._timer.Elapsed += Update;
 
-			this.enumerator = this.gameInfos.GetEnumerator();
+			this._gameInfosEnumerator = this._gameInfos.GetEnumerator();
 		}
 
 		private void Update(object sender, EventArgs e) {
-			for (int i = this.processes.Count - 1; i >= 0; i--) {
-				if (this.processes[i].HasExited) {
-					Console.WriteLine($"End {this.processes[i].StartInfo.Arguments[0]}");
+			for (int i = this._activeGameProcesses.Count - 1; i >= 0; i--) {
+				if (this._activeGameProcesses[i].HasExited) {
+					Console.WriteLine($"End {this._activeGameProcesses[i].StartInfo.Arguments[0]}");
 
-					this.processes.RemoveAt(i);
+					this._activeGameProcesses.RemoveAt(i);
 				}
 			}
 
-			if (this.allGamesStarted) {
-				if (this.processes.Count == 0) {
-					this.allGamesEnded = true;
-					this.timer.Stop();
+			if (this._isAllGameProcessesStarted) {
+				if (this._activeGameProcesses.Count == 0) {
+					this._isAllGameProcessesEnded = true;
+					this._timer.Stop();
 					return;
 				}
 			}
 
-			while (this.processes.Count < this.batchSize) {
-				if (this.enumerator.MoveNext()) {
-					GameInfo gameInfo = this.enumerator.Current;
-					Process p = this.startGameForm.Invoke(gameInfo);
-					this.processes.Add(p);
+			while (this._activeGameProcesses.Count < this._maxGameProcessCountAtSameTime) {
+				if (this._gameInfosEnumerator.MoveNext()) {
+					GameInfo gameInfo = this._gameInfosEnumerator.Current;
+					Process p = this._gameFactory.StartGameForm(gameInfo, true);
+					this._activeGameProcesses.Add(p);
 
 					Console.WriteLine($"Start {gameInfo.Id}, name: {gameInfo.Name}");
 				} else {
-					this.allGamesStarted = true;
+					this._isAllGameProcessesStarted = true;
 					break;
 				}
 			}

@@ -44,6 +44,9 @@
 			this._FilterModsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this._FilterJunkMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this._AutoUnlockButton = new System.Windows.Forms.ToolStripButton();
+			this.toolStripDropDownButton1 = new System.Windows.Forms.ToolStripDropDownButton();
+			this.enableAutoUnlockToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.disableAutoUnlockToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this._PickerStatusStrip = new System.Windows.Forms.StatusStrip();
 			this._PickerStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
 			this._DownloadStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
@@ -86,7 +89,8 @@
             this._AddGameButton,
             _ToolStripSeparator2,
             this._FilterDropDownButton,
-            this._AutoUnlockButton});
+            this._AutoUnlockButton,
+            this.toolStripDropDownButton1});
 			this._PickerToolStrip.Location = new System.Drawing.Point(0, 0);
 			this._PickerToolStrip.Name = "_PickerToolStrip";
 			this._PickerToolStrip.Size = new System.Drawing.Size(824, 25);
@@ -173,6 +177,32 @@
 			this._AutoUnlockButton.Size = new System.Drawing.Size(88, 22);
 			this._AutoUnlockButton.Text = "分批次解锁";
 			this._AutoUnlockButton.Click += new System.EventHandler(this._AutoUnlockButton_Click);
+			// 
+			// toolStripDropDownButton1
+			// 
+			this.toolStripDropDownButton1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+			this.toolStripDropDownButton1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.enableAutoUnlockToolStripMenuItem,
+            this.disableAutoUnlockToolStripMenuItem});
+			this.toolStripDropDownButton1.Image = ((System.Drawing.Image)(resources.GetObject("toolStripDropDownButton1.Image")));
+			this.toolStripDropDownButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
+			this.toolStripDropDownButton1.Name = "toolStripDropDownButton1";
+			this.toolStripDropDownButton1.Size = new System.Drawing.Size(29, 22);
+			this.toolStripDropDownButton1.Text = "Option";
+			// 
+			// enableAutoUnlockToolStripMenuItem
+			// 
+			this.enableAutoUnlockToolStripMenuItem.Name = "enableAutoUnlockToolStripMenuItem";
+			this.enableAutoUnlockToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
+			this.enableAutoUnlockToolStripMenuItem.Text = "Enable Auto Unlock";
+			this.enableAutoUnlockToolStripMenuItem.Click += new System.EventHandler(this.enableAutoUnlockToolStripMenuItem_Click);
+			// 
+			// disableAutoUnlockToolStripMenuItem
+			// 
+			this.disableAutoUnlockToolStripMenuItem.Name = "disableAutoUnlockToolStripMenuItem";
+			this.disableAutoUnlockToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
+			this.disableAutoUnlockToolStripMenuItem.Text = "Disable Auto Unlock";
+			this.disableAutoUnlockToolStripMenuItem.Click += new System.EventHandler(this.disableAutoUnlockToolStripMenuItem_Click);
 			// 
 			// _PickerStatusStrip
 			// 
@@ -274,6 +304,9 @@
         private System.ComponentModel.BackgroundWorker _LogoWorker;
         private System.ComponentModel.BackgroundWorker _ListWorker;
 		private System.Windows.Forms.ToolStripButton _AutoUnlockButton;
+		private System.Windows.Forms.ToolStripDropDownButton toolStripDropDownButton1;
+		private System.Windows.Forms.ToolStripMenuItem enableAutoUnlockToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem disableAutoUnlockToolStripMenuItem;
 	}
 }
 

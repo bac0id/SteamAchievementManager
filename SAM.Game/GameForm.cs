@@ -57,11 +57,15 @@ namespace SAM.Game
 
         private bool needToShowNormalMessageBox = false;
 
-        public GameForm(long gameId, API.Client client)
+        private bool _enableAutoUnlock;
+
+		public GameForm(long gameId, API.Client client, bool enableAutoUnlock)
         {
             this.InitializeComponent();
+            _enableAutoUnlock = enableAutoUnlock;
 
-            this._MainTabControl.SelectedTab = this._AchievementsTabPage;
+
+			this._MainTabControl.SelectedTab = this._AchievementsTabPage;
             //this.statisticsList.Enabled = this.checkBox1.Checked;
 
             this._AchievementImageList.Images.Add("Blank", new Bitmap(64, 64));
@@ -493,9 +497,11 @@ namespace SAM.Game
 
             //this.DownloadNextIcon();
 
-            UnlockAllAndStore();
-            this.autoCloseTimer.Enabled = true;
-			//_UnlockAllAndCloseButton_Click(null, null);
+            if (_enableAutoUnlock) {
+				UnlockAllAndStore();
+				this.autoCloseTimer.Enabled = true;
+				//_UnlockAllAndCloseButton_Click(null, null);
+			}
 		}
 
         private void GetStatistics()

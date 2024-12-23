@@ -51,7 +51,10 @@ namespace SAM.Picker
         private readonly API.Callbacks.AppDataChanged _AppDataChangedCallback;
         // ReSharper restore PrivateFieldCanBeConvertedToLocalVariable
 
-        public GameListForm(API.Client client)
+        private SAMGameFactory _gameFactory = new SAMGameFactory();
+        private bool _enableAutoUnlock;
+
+		public GameListForm(API.Client client)
         {
             this._Games = new Dictionary<uint, GameInfo>();
             this._gameInfos = new List<GameInfo>();
@@ -384,36 +387,10 @@ namespace SAM.Picker
                 return;
             }
 
-            StartGameForm(gameInfo);
+			_gameFactory.StartGameForm(gameInfo, _enableAutoUnlock);
         }
 
-        private Process StartGameForm(GameInfo gameInfo) {
-            Process process = null;
-			try {
-				ProcessStartInfo processStartInfo = new ProcessStartInfo();
-				processStartInfo.CreateNoWindow = true;
-				processStartInfo.FileName = "SAM.Game.exe";
-				processStartInfo.Arguments = gameInfo.Id.ToString(CultureInfo.InvariantCulture);
-
-				process = Process.Start(processStartInfo);
-
-				// gameClient.Initialize(info.Id) can cause ClientInitializeException(ClientInitializeFailure.AppIdMismatch, "appID mismatch") in Client.cs
-
-				//var gameClient = new API.Client();
-    //            gameClient.Initialize(gameInfo.Id);
-    //            new Game.GameForm(gameInfo.Id, gameClient);
-			} catch (Win32Exception) {
-				MessageBox.Show(
-					this,
-					"Failed to start SAM.Game.exe.",
-					"Error",
-					MessageBoxButtons.OK,
-					MessageBoxIcon.Error);
-			}
-            return process;
-		}
-
-        private void OnRefresh(object sender, EventArgs e)
+		private void OnRefresh(object sender, EventArgs e)
         {
             this._AddGameTextBox.Text = "";
             this.AddGames();
@@ -497,10 +474,16 @@ namespace SAM.Picker
 		}
 
 		private void _AutoUnlockButton_Click(object sender, EventArgs e) {
-            int batchSize = 50;
-            int timerInterval = 200; //ms
-			AutoUnlocker autoUnlocker = new AutoUnlocker(_gameInfos, batchSize, timerInterval, StartGameForm);
+			AutoUnlocker autoUnlocker = new AutoUnlocker(_gameInfos, _gameFactory);
 			autoUnlocker.Start();
+		}
+
+		private void enableAutoUnlockToolStripMenuItem_Click(object sender, EventArgs e) {
+            _enableAutoUnlock = true;
+		}
+
+		private void disableAutoUnlockToolStripMenuItem_Click(object sender, EventArgs e) {
+            _enableAutoUnlock = false;
 		}
 	}
 }

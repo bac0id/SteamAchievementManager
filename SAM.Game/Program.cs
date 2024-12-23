@@ -22,6 +22,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq.Expressions;
 using System.Net;
 using System.Windows.Forms;
 
@@ -39,7 +40,7 @@ namespace SAM.Game
                 Process.Start("SAM.Picker.exe");
                 return;
             }
-
+            
             if (long.TryParse(args[0], out appId) == false)
             {
                 MessageBox.Show(
@@ -58,9 +59,18 @@ namespace SAM.Game
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
                 return;
-            }
+			}
 
-            using (var client = new API.Client())
+			if (int.TryParse(args[1], out int enableAutoUnlock) == false) {
+				MessageBox.Show(
+					"Args[1] enableAutoUnlock error.",
+					"Error",
+					MessageBoxButtons.OK,
+					MessageBoxIcon.Error);
+				return;
+			}
+
+			using (var client = new API.Client())
             {
                 try
                 {
@@ -106,12 +116,12 @@ namespace SAM.Game
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
                     return;
-                }
+				}
 
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new GameForm(appId, client));
-            }
-        }
-    }
+				Application.EnableVisualStyles();
+				Application.SetCompatibleTextRenderingDefault(false);
+				Application.Run(new GameForm(appId, client, enableAutoUnlock == 1));
+			}
+		}
+	}
 }
