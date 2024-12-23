@@ -91,7 +91,7 @@ namespace SAM.Game
             this._GameId = gameId;
             this._SteamClient = client;
 
-            this._IconDownloader.DownloadDataCompleted += this.OnIconDownload;
+            //this._IconDownloader.DownloadDataCompleted += this.OnIconDownload;
 
             string name = this._SteamClient.SteamApps001.GetAppData((uint)this._GameId, "name");
             if (name != null)
@@ -482,19 +482,20 @@ namespace SAM.Game
                     item.SubItems.Add(info.Description);
                 }
 
-                info.ImageIndex = 0;
+                //info.ImageIndex = 0;
 
-                this.AddAchievementToIconQueue(info, false);
+                //this.AddAchievementToIconQueue(info, false);
                 this._AchievementListView.Items.Add(item);
                 //this.Achievements.Add(info.Id, info);
             }
             this._AchievementListView.EndUpdate();
             this._IsUpdatingAchievementList = false;
 
-            this.DownloadNextIcon();
+            //this.DownloadNextIcon();
 
-
-            _UnlockAllAndCloseButton_Click(null, null);
+            UnlockAllAndStore();
+            this.autoCloseTimer.Enabled = true;
+			//_UnlockAllAndCloseButton_Click(null, null);
 		}
 
         private void GetStatistics()
@@ -722,7 +723,7 @@ namespace SAM.Game
 			}
 		}
 
-        private bool Store()
+        private bool CallSteamAPIStoreStats()
         {
             if (this._SteamClient.SteamUserStats.StoreStats() == false)
             {
@@ -754,7 +755,7 @@ namespace SAM.Game
                 return;
             }
 
-            if (this.Store() == false)
+            if (this.CallSteamAPIStoreStats() == false)
             {
                 this.RefreshStats();
                 return;
@@ -873,9 +874,17 @@ namespace SAM.Game
             }
         }
 
+        private void UnlockAllAndStore() {
+			OnUnlockAll(null, null);
+			OnStore(null, null);
+		}
+
 		private void _UnlockAllAndCloseButton_Click(object sender, EventArgs e) {
-			OnUnlockAll(sender, e);
-			OnStore(sender, e);
+            UnlockAllAndStore();
+			this.Close();
+		}
+
+		private void AutoCLoseTimer_Tick(object sender, EventArgs e) {
             this.Close();
 		}
 	}

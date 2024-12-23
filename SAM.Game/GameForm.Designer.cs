@@ -35,6 +35,7 @@
 			this._StoreButton = new System.Windows.Forms.ToolStripButton();
 			this._ReloadButton = new System.Windows.Forms.ToolStripButton();
 			this._ResetButton = new System.Windows.Forms.ToolStripButton();
+			this._UnlockAllAndCloseButton = new System.Windows.Forms.ToolStripButton();
 			this._AchievementImageList = new System.Windows.Forms.ImageList(this.components);
 			this._MainStatusStrip = new System.Windows.Forms.StatusStrip();
 			this._CountryStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
@@ -50,7 +51,7 @@
 			this._StatisticsTabPage = new System.Windows.Forms.TabPage();
 			this._EnableStatsEditingCheckBox = new System.Windows.Forms.CheckBox();
 			this._StatisticsDataGridView = new System.Windows.Forms.DataGridView();
-			this._UnlockAllAndCloseButton = new System.Windows.Forms.ToolStripButton();
+			this.autoCloseTimer = new System.Windows.Forms.Timer(this.components);
 			this._AchievementListView = new SAM.Game.DoubleBufferedListView();
 			this._AchievementNameColumnHeader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this._AchievementDescriptionColumnHeader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -114,6 +115,16 @@
 			this._ResetButton.Text = "Reset";
 			this._ResetButton.ToolTipText = "Reset achievements and/or statistics for active game.";
 			this._ResetButton.Click += new System.EventHandler(this.OnResetAllStats);
+			// 
+			// _UnlockAllAndCloseButton
+			// 
+			this._UnlockAllAndCloseButton.Image = global::SAM.Game.Resources.Unlock;
+			this._UnlockAllAndCloseButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+			this._UnlockAllAndCloseButton.Name = "_UnlockAllAndCloseButton";
+			this._UnlockAllAndCloseButton.Size = new System.Drawing.Size(100, 22);
+			this._UnlockAllAndCloseButton.Text = "全解锁并关闭";
+			this._UnlockAllAndCloseButton.ToolTipText = "Reset achievements and/or statistics for active game.";
+			this._UnlockAllAndCloseButton.Click += new System.EventHandler(this._UnlockAllAndCloseButton_Click);
 			// 
 			// _AchievementImageList
 			// 
@@ -268,15 +279,10 @@
 			this._StatisticsDataGridView.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.OnStatCellEndEdit);
 			this._StatisticsDataGridView.DataError += new System.Windows.Forms.DataGridViewDataErrorEventHandler(this.OnStatDataError);
 			// 
-			// _UnlockAllAndCloseButton
+			// autoCloseTimer
 			// 
-			this._UnlockAllAndCloseButton.Image = global::SAM.Game.Resources.Unlock;
-			this._UnlockAllAndCloseButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-			this._UnlockAllAndCloseButton.Name = "_UnlockAllAndCloseButton";
-			this._UnlockAllAndCloseButton.Size = new System.Drawing.Size(100, 22);
-			this._UnlockAllAndCloseButton.Text = "全解锁并关闭";
-			this._UnlockAllAndCloseButton.ToolTipText = "Reset achievements and/or statistics for active game.";
-			this._UnlockAllAndCloseButton.Click += new System.EventHandler(this._UnlockAllAndCloseButton_Click);
+			this.autoCloseTimer.Interval = 10000;
+			this.autoCloseTimer.Tick += new System.EventHandler(this.AutoCLoseTimer_Tick);
 			// 
 			// _AchievementListView
 			// 
@@ -367,6 +373,7 @@
         private System.Windows.Forms.ToolStripButton _ResetButton;
         private System.Windows.Forms.ToolStripStatusLabel _DownloadStatusLabel;
 		private System.Windows.Forms.ToolStripButton _UnlockAllAndCloseButton;
+		private System.Windows.Forms.Timer autoCloseTimer;
 	}
 }
 

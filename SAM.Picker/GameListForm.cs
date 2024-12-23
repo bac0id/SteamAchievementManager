@@ -400,8 +400,8 @@ namespace SAM.Picker
 				// gameClient.Initialize(info.Id) can cause ClientInitializeException(ClientInitializeFailure.AppIdMismatch, "appID mismatch") in Client.cs
 
 				//var gameClient = new API.Client();
-				//gameClient.Initialize(info.Id);
-				//new Game.GameForm(info.Id, gameClient);
+    //            gameClient.Initialize(gameInfo.Id);
+    //            new Game.GameForm(gameInfo.Id, gameClient);
 			} catch (Win32Exception) {
 				MessageBox.Show(
 					this,
@@ -425,7 +425,8 @@ namespace SAM.Picker
 
             string inputStr = this._AddGameTextBox.Text;
 
-			if (!this.GetFirstDigitSegment(inputStr, out string digitSegment))
+			string firstDigitsSubstring = GetFirstContinousDigitSubstring(inputStr);
+			if (firstDigitsSubstring == null)
             {
 				MessageBox.Show(
 	                this,
@@ -436,7 +437,7 @@ namespace SAM.Picker
 				return;
 			}
 
-			if (uint.TryParse(digitSegment, out id) == false)
+			if (uint.TryParse(firstDigitsSubstring, out id) == false)
             {
                 MessageBox.Show(
                     this,
@@ -473,15 +474,14 @@ namespace SAM.Picker
             this.RefreshGames();
 		}
 
-		private bool GetFirstDigitSegment(string str, out string digitSegment)
+		private string GetFirstContinousDigitSubstring(string str)
         {
 			int length = str.Length;
 
 			char firstDigit = str.FirstOrDefault(x => x >= '0' && x <= '9');
 			if (firstDigit == '\0')
             {
-				digitSegment = null;
-				return false;
+                return null;
 			}
 
 			int i = str.IndexOf(firstDigit);
@@ -492,55 +492,14 @@ namespace SAM.Picker
 				++j;
 			}
 
-			digitSegment = str.Substring(i, j - i);
-			return true;
+            string ans = str.Substring(i, j - i);
+			return ans;
 		}
 
 		private void _AutoUnlockButton_Click(object sender, EventArgs e) {
-            //int gameCount = _gameInfos.Count;
-            //int countPerBatch = 20;
-
-            //IEnumerator<GameInfo> enumerator = _gameInfos.GetEnumerator();
-
-            //List<Process> processes = new List<Process>(countPerBatch);
-
-            //         bool allGamesStarted = false;
-            //         bool allGamesEnded = false;
-            //Timer timer = new Timer();
-            //timer.Interval = 100;
-            //timer.Tick += (sender1, e1) => {
-
-            //	for (int i = processes.Count - 1; i >= 0; i--) {
-            //		if (processes[i].HasExited) {
-            //			Console.WriteLine($"End {processes[i].StartInfo.Arguments[0]}");
-            //			processes.RemoveAt(i);
-            //		}
-            //	}
-
-            //	if (allGamesStarted) {
-            //		if (processes.Count == 0) {
-            //			allGamesEnded = true;
-            //			timer.Stop();
-            //			return;
-            //		}
-            //	}
-
-            //	while (processes.Count < countPerBatch) {
-            //		if (enumerator.MoveNext()) {
-            //			GameInfo gameInfo = enumerator.Current;
-            //			Process p = StartGameForm(gameInfo);
-            //			processes.Add(p);
-            //			Console.WriteLine($"Start {gameInfo.Id}, name: {gameInfo.Name}");
-            //		} else {
-            //			allGamesStarted = true;
-            //			break;
-            //		}
-            //	}
-
-            //};
-            //timer.Start();
-
-			AutoUnlocker autoUnlocker = new AutoUnlocker(_gameInfos, 20, 200, StartGameForm);
+            int batchSize = 50;
+            int timerInterval = 200; //ms
+			AutoUnlocker autoUnlocker = new AutoUnlocker(_gameInfos, batchSize, timerInterval, StartGameForm);
 			autoUnlocker.Start();
 		}
 	}
